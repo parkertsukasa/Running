@@ -129,7 +129,6 @@ public class InputSwitcher : MonoBehaviour
   {
     Vector3 inputGyro = Input.gyro.attitude.eulerAngles - defaultGyro;
     
-    text.text = inputGyro.ToString();
 
     float hundle = -inputGyro.z * 0.05f;
     if (hundle > 1.0f)

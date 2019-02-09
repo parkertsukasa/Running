@@ -56,6 +56,7 @@ public class BbaControl : MonoBehaviour
   private Transform mainCamera;
   private float gyroZ;
   public float GyroZ { set { gyroZ = value;} }
+  private float accelCamera = 0.1f;
 
 
 // ----- not used -----
@@ -79,6 +80,16 @@ public class BbaControl : MonoBehaviour
       velocity = maxSpeed * Time.deltaTime * -0.2f;
 
     transform.Translate (Vector3.forward * velocity);
+
+    if (transform.position.x > 10.0f)
+    {
+      transform.position = new Vector3 (10.0f, transform.position.y, transform.position.z);
+    }
+
+    if (transform.position.x < -10.0f)
+    {
+      transform.position = new Vector3 (-10.0f, transform.position.y, transform.position.z);
+    }
 
   }
 
@@ -165,15 +176,23 @@ public class BbaControl : MonoBehaviour
 
     if (dash)
     {      
-      cameraZ -= 0.2f;
-      if (cameraZ < -10.0f)
-        cameraZ = -10.0f;
+      cameraZ -= accelCamera;
+      accelCamera *= 1.5f;
+      if (cameraZ < -8.5f)
+      {
+        cameraZ = -8.5f;
+        accelCamera = 0.1f;
+      }
     }
     else
     {
-      cameraZ += 0.2f;
+      cameraZ += accelCamera;
+      accelCamera *= 1.5f;
       if (cameraZ > -7.5f)
+      {
         cameraZ = -7.5f;
+        accelCamera = 0.1f;
+      }
     }
 
     mainCamera.transform.localPosition = new Vector3 (mainCamera.transform.localPosition.x, mainCamera.transform.localPosition.y, cameraZ);
@@ -184,7 +203,7 @@ public class BbaControl : MonoBehaviour
    */
   private void HPManage ()
   {
-    hp -= 1.0f * Time.deltaTime;
+    hp -= 3.0f * Time.deltaTime;
     var setting = behaviour.profile.colorGrading.settings;
     setting.basic.saturation = hp * 0.02f;
     behaviour.profile.colorGrading.settings = setting;
@@ -217,6 +236,31 @@ public class BbaControl : MonoBehaviour
       if (hp > 100.0f)
         hp = 100.0f;
     }
+
+    if (col.gameObject.tag == "ObstacleBig")
+    {
+      velocity -= 20.0f;
+      if (velocity < 0.0f)
+        velocity = 0.0f;
+
+      if (dash)
+      {
+        col.gameObject.AddComponent<Rigidbody>().velocity = new Vector3(0, 10, 0);
+      }
+    }
+
+    if (col.gameObject.tag == "ObstacleSmall")
+    {
+      velocity -= 10.0f;
+      if (velocity < 0.0f)
+        velocity = 0.0f;
+
+      if (dash)
+      {
+        col.gameObject.AddComponent<Rigidbody>().velocity = new Vector3(0, 10, 0);
+      }
+    }
+
   }
 
 
