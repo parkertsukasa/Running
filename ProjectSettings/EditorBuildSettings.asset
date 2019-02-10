@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Parker/Scenes/Title.unity
+    guid: 6ccedc00ad39c4301a59ba40cdd345d3
+  - enabled: 1
     path: Assets/Parker/Scenes/Run.unity
     guid: 0dab9fbd53d5540b2a8950e25428afd3
   m_configObjects: {}
