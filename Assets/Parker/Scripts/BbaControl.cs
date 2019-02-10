@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.PostProcessing;
 
 public class BbaControl : MonoBehaviour 
@@ -34,6 +35,7 @@ public class BbaControl : MonoBehaviour
   [SerializeField]
   private bool dash = false;
   private bool drift = false;
+  private bool isGoal = false;
 
   PostProcessingBehaviour behaviour;
   
@@ -52,6 +54,9 @@ public class BbaControl : MonoBehaviour
 
   private GameObject fireEffect;
   private GameObject smokeEffect;
+
+  private GameObject goalText;
+  private GameObject gameoverText;
 
   private Transform mainCamera;
   private float gyroZ;
@@ -169,33 +174,49 @@ public class BbaControl : MonoBehaviour
    */
   private void CameraManage ()
   {
-    Vector3 nowRot = transform.rotation.eulerAngles;
-    mainCamera.rotation = Quaternion.Euler(nowRot.x, nowRot.y, gyroZ);
 
-    float cameraZ = mainCamera.transform.localPosition.z;
+    if (!isGoal)
+    {
+      float cameraZ = mainCamera.transform.localPosition.z;
 
-    if (dash)
-    {      
-      cameraZ -= accelCamera;
-      accelCamera *= 1.5f;
-      if (cameraZ < -8.5f)
-      {
-        cameraZ = -8.5f;
-        accelCamera = 0.1f;
+      if (dash)
+      {      
+        cameraZ -= accelCamera;
+        accelCamera *= 1.5f;
+        if (cameraZ < -8.5f)
+        {
+          cameraZ = -8.5f;
+          accelCamera = 0.1f;
+        }
       }
+      else
+      {
+        cameraZ += accelCamera;
+        accelCamera *= 1.5f;
+        if (cameraZ > -7.5f)
+        {
+          cameraZ = -7.5f;
+          accelCamera = 0.1f;
+        }
+      }
+
+      mainCamera.transform.localPosition = new Vector3 (mainCamera.transform.localPosition.x, mainCamera.transform.localPosition.y, cameraZ);
+
+      Vector3 nowRot = transform.rotation.eulerAngles;
+      mainCamera.rotation = Quaternion.Euler(nowRot.x, nowRot.y, gyroZ);
+      goalText.SetActive (false);
     }
     else
     {
-      cameraZ += accelCamera;
-      accelCamera *= 1.5f;
-      if (cameraZ > -7.5f)
-      {
-        cameraZ = -7.5f;
-        accelCamera = 0.1f;
-      }
+      // --- ゴールした時のカメラワーク ---
+      mainCamera.transform.LookAt (this.transform.position + new Vector3(0, 2, 0));
+      mainCamera.transform.localPosition = Vector3.Slerp(mainCamera.transform.localPosition, new Vector3 (-1.5f, 1.5f, 4), 2.0f * Time.deltaTime);
+      velocity = maxSpeed;
+      Vector3 nowRot = transform.rotation.eulerAngles;
+      goalText.SetActive (true);
+      hp = 100.0f;
+      //mainCamera.rotation = Quaternion.Euler(nowRot.x, nowRot.y, 0.0f);
     }
-
-    mainCamera.transform.localPosition = new Vector3 (mainCamera.transform.localPosition.x, mainCamera.transform.localPosition.y, cameraZ);
   }
 
   /* ---------------------------------------- HPManage
@@ -207,6 +228,26 @@ public class BbaControl : MonoBehaviour
     var setting = behaviour.profile.colorGrading.settings;
     setting.basic.saturation = hp * 0.02f;
     behaviour.profile.colorGrading.settings = setting;
+    
+    gameoverText.SetActive (false);
+
+    if (hp < 0.0f)
+    {
+      gameoverText.SetActive (true);
+      hp -= 10.0f * Time.deltaTime;
+      setting.basic.saturation = hp * 0.02f;
+      behaviour.profile.colorGrading.settings = setting;
+      velocity = 0.0f;
+      Invoke ("SceneReload", 5.0f);
+    }
+  }
+
+  /* ---------------------------------------- SceneReload
+   * シーンの再読み込み : 
+   */
+  private void SceneReload ()
+  {
+    SceneManager.LoadScene("Run");
   }
 
   /* ----------------------------------------- EffectManage
@@ -235,6 +276,8 @@ public class BbaControl : MonoBehaviour
       hp += 30.0f;
       if (hp > 100.0f)
         hp = 100.0f;
+
+      Destroy (col.gameObject);
     }
 
     if (col.gameObject.tag == "ObstacleBig")
@@ -245,7 +288,7 @@ public class BbaControl : MonoBehaviour
 
       if (dash)
       {
-        col.gameObject.AddComponent<Rigidbody>().velocity = new Vector3(0, 10, 0);
+        col.gameObject.AddComponent<Rigidbody>().velocity = new Vector3(0, 30, 0);
       }
     }
 
@@ -257,8 +300,13 @@ public class BbaControl : MonoBehaviour
 
       if (dash)
       {
-        col.gameObject.AddComponent<Rigidbody>().velocity = new Vector3(0, 10, 0);
+        col.gameObject.AddComponent<Rigidbody>().velocity = new Vector3(0, 30, 0);
       }
+    }
+
+    if (col.gameObject.tag == "Goal")
+    {
+      isGoal = true;
     }
 
   }
@@ -273,6 +321,8 @@ public class BbaControl : MonoBehaviour
     trail = GameObject.Find("Trail");
     fireEffect = GameObject.Find ("Fire");
     smokeEffect = GameObject.Find ("Smoke");
+    goalText = GameObject.Find ("GoalText");
+    gameoverText = GameObject.Find ("GameOverText");
     trailMaterial = trail.GetComponent<Material> ();
     defaultMaxSpeed = maxSpeed;
     defaultAccelPower = accelPower;

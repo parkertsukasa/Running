@@ -144,6 +144,7 @@ public class InputSwitcher : MonoBehaviour
       bbaControl.GyroZ = inputGyro.z;
   }
 
+
   // Update is called once per frame
 	void Update () 
   {
@@ -152,5 +153,7 @@ public class InputSwitcher : MonoBehaviour
     ButtonUpdate ();
     GetGyroInput ();
     bbaControl.InputHundle = Input.GetAxis ("Horizontal");
-	}
+	
+  }
+
 }
